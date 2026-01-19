@@ -23,7 +23,7 @@
             
             <!-- Logo Area -->
             <div class="relative inline-block">
-                <img src="assets/src/provitta_logopng.png" alt="Provitta Life" class="relative h-16 md:h-20 w-auto mx-auto drop-shadow-2xl">
+                <img src="assets/src/provitta_logopng.png" alt="Provitta Life" class="relative h-10 md:h-12 w-auto mx-auto drop-shadow-2xl">
             </div>
             
             <h1 class="text-4xl md:text-6xl font-bold tracking-tight">
