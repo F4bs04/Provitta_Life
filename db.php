@@ -1,12 +1,12 @@
 <?php
 // Configuração: altere para 'mysql' quando for para a Hostinger
-$db_type = 'sqlite'; // 'mysql' ou 'sqlite'
+$db_type = 'mysql'; // 'mysql' ou 'sqlite'
 
 if ($db_type === 'mysql') {
     $host = 'localhost';
-    $db   = 'provitta_life';
-    $user = 'root';
-    $pass = '';
+    $db   = 'u573831812_Prolife_banco';
+    $user = 'u573831812_prolife';
+    $pass = 'Prolife_2K25***';
     $charset = 'utf8mb4';
     $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 } else {

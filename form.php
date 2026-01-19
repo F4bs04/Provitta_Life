@@ -23,7 +23,7 @@
     <!-- Header -->
     <header class="relative z-10 border-b border-white/5 bg-black/20 backdrop-blur-md">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <img src="assets/src/provitta_logopng.png" alt="Provitta Life" class="h-8 md:h-10 w-auto">
+            <img src="assets/src/provitta_logopng.png" alt="Provitta Life" class="h-6 md:h-10 w-auto">
             <div class="text-xs text-gray-400 font-mono">SESSION_ID: <?php echo uniqid(); ?></div>
         </div>
     </header>

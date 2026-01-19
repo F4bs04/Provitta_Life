@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="relative z-10 w-full max-w-md bg-surface/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 shadow-2xl">
         <div class="text-center mb-8">
-            <img src="../assets/src/provitta_logopng.png" alt="Provitta Life" class="h-16 w-auto mx-auto mb-4 drop-shadow-2xl">
+            <img src="../assets/src/provitta_logopng.png" alt="Provitta Life" class="h-12 md:h-16 w-auto mx-auto mb-4 drop-shadow-2xl">
             <h1 class="text-2xl font-bold text-white mb-2">Área Administrativa</h1>
             <p class="text-gray-400 text-sm">Acesse o dashboard de gestão</p>
         </div>

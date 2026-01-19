@@ -1,5 +1,4 @@
-CREATE DATABASE IF NOT EXISTS provitta_life;
-USE provitta_life;
+
 
 CREATE TABLE IF NOT EXISTS leads (
     id INT AUTO_INCREMENT PRIMARY KEY,
