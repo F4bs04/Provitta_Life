@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Avaliação metabólica Provitta Life - Descubra seu protocolo de suplementação ideal.">
+    <meta name="author" content="Fabian Araújo">
     <title>Avaliação - Provitta Life</title>
+    <link rel="icon" href="./assets/src/favicon.icon" type="image/x-icon">
     <link href="./assets/css/style.css" rel="stylesheet">
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>

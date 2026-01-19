@@ -121,7 +121,7 @@ Provitta_Life/
 
 ## 👨‍💻 Desenvolvedor
 
-**Fabián Araújo**
+**Fabian Araújo**
 
 - Email: fabian.ajaraujo@gmail.com
 - GitHub: [@F4bs04](https://github.com/F4bs04)

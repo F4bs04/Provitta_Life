@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Provitta Life</title>
+    <link rel="icon" href="../assets/src/favicon.icon" type="image/x-icon">
     <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body class="bg-background bg-brand-gradient text-text font-sans antialiased min-h-screen flex items-center justify-center p-4">

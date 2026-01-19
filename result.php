@@ -15,7 +15,10 @@ $alerts = $_SESSION['alerts'] ?? [];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Seu protocolo personalizado Provitta Life está pronto.">
+    <meta name="author" content="Fabian Araújo">
     <title>Seu Protocolo - Provitta Life</title>
+    <link rel="icon" href="./assets/src/favicon.icon" type="image/x-icon">
     <link href="./assets/css/style.css" rel="stylesheet">
 </head>
 <body class="bg-background bg-brand-gradient text-text font-sans antialiased min-h-screen py-10 px-4 bg-fixed">
