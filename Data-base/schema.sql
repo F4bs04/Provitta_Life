@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS leads (
     emotional ENUM('stable', 'unstable') DEFAULT 'stable',
     gut ENUM('normal', 'constipated', 'loose') DEFAULT 'normal',
     observations TEXT,
-    total_price DECIMAL(10, 2) DEFAULT 0.00
+    total_price DECIMAL(10, 2) DEFAULT 0.00,
+    status ENUM('orcamento_gerado', 'compra_confirmada', 'produto_comprado', 'recompra') DEFAULT 'orcamento_gerado'
 );
 
 CREATE TABLE IF NOT EXISTS protocol_items (

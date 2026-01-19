@@ -42,7 +42,8 @@ try {
             emotional TEXT DEFAULT 'stable',
             gut TEXT DEFAULT 'normal',
             observations TEXT,
-            total_price DECIMAL(10, 2) DEFAULT 0.00
+            total_price DECIMAL(10, 2) DEFAULT 0.00,
+            status TEXT DEFAULT 'orcamento_gerado'
         )");
 
         $pdo->exec("CREATE TABLE IF NOT EXISTS protocol_items (

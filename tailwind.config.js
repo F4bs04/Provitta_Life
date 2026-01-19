@@ -1,6 +1,20 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./**/*.{html,js,php}"],
+  safelist: [
+    'bg-primary/20',
+    'text-primary',
+    'bg-yellow-400/20',
+    'text-yellow-400',
+    'bg-green-400/20',
+    'text-green-400',
+    'bg-secondary/20',
+    'text-secondary',
+    'bg-primary/30',
+    'bg-yellow-400/30',
+    'bg-green-400/30',
+    'bg-secondary/30',
+  ],
   theme: {
     extend: {
       fontFamily: {
