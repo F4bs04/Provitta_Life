@@ -1,0 +1,10 @@
+node_modules/
+vendor/
+*.sqlite
+*.db
+.env
+.DS_Store
+Thumbs.db
+*.log
+composer.phar
+package-lock.json
