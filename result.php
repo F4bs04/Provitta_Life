@@ -37,7 +37,7 @@ $alerts = $_SESSION['alerts'] ?? [];
             <div class="bg-gradient-to-r from-surface to-background p-8 text-center border-b border-white/5 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary"></div>
                 
-                <img src="assets/src/provitta_logopng.png" alt="Provitta Life" class="h-14 md:h-20 w-auto mx-auto mb-6 drop-shadow-lg">
+                <img src="assets/src/provitta_logopng.png" alt="Provitta Life" class="h-14 md:h-16 w-auto mx-auto mb-6 drop-shadow-lg">
                 <h1 class="text-3xl font-bold text-white mb-2 tracking-tight">Protocolo Personalizado</h1>
                 <p class="text-gray-400">Gerado com sucesso para o seu metabolismo.</p>
             </div>

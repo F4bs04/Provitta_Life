@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     <header class="relative z-10 border-b border-white/10 bg-black/30 backdrop-blur-md">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-4">
-                <img src="../assets/src/provitta_logopng.png" alt="Provitta Life" class="h-8 md:h-10 w-auto">
+                <img src="../assets/src/provitta_logopng.png" alt="Provitta Life" class="h-8 md:h-8 w-auto">
                 <h1 class="text-2xl font-bold text-white">Dashboard Administrativo</h1>
             </div>
             <div class="flex items-center gap-4">
