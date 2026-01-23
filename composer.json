@@ -1,0 +1,20 @@
+{
+    "name": "provitta/app",
+    "description": "Provitta Life App",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "dompdf/dompdf": "^2.0"
+    },
+    "authors": [
+        {
+            "name": "Provitta",
+            "email": "dev@provitta.com"
+        }
+    ],
+    "config": {
+        "allow-plugins": {
+            "dompdf/dompdf": true
+        }
+    }
+}
