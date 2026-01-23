@@ -1,6 +1,6 @@
 <?php
 // Configuração: altere para 'mysql' quando for para a Hostinger
-$db_type = 'mysql'; // 'mysql' ou 'sqlite'
+$db_type = 'sqlite'; // 'mysql' ou 'sqlite'
 
 if ($db_type === 'mysql') {
     $host = 'localhost';
@@ -43,7 +43,9 @@ try {
             gut TEXT DEFAULT 'normal',
             observations TEXT,
             total_price DECIMAL(10, 2) DEFAULT 0.00,
-            status TEXT DEFAULT 'orcamento_gerado'
+            status TEXT DEFAULT 'orcamento_gerado',
+            user_id INTEGER,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )");
 
         $pdo->exec("CREATE TABLE IF NOT EXISTS protocol_items (
@@ -59,14 +61,16 @@ try {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            role TEXT DEFAULT 'admin'
+            name TEXT,
+            cpf TEXT,
+            role TEXT DEFAULT 'consultant'
         )");
 
         // Criar usuário admin padrão se não existir
         $stmt = $pdo->query("SELECT COUNT(*) FROM users");
         if ($stmt->fetchColumn() == 0) {
             $password = password_hash('admin123', PASSWORD_DEFAULT);
-            $pdo->exec("INSERT INTO users (username, password, role) VALUES ('admin', '$password', 'admin')");
+            $pdo->exec("INSERT INTO users (username, password, name, role) VALUES ('admin', '$password', 'Administrador Master', 'master')");
         }
     }
 } catch (\PDOException $e) {

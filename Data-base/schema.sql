@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS leads (
     gut ENUM('normal', 'constipated', 'loose') DEFAULT 'normal',
     observations TEXT,
     total_price DECIMAL(10, 2) DEFAULT 0.00,
-    status ENUM('orcamento_gerado', 'compra_confirmada', 'produto_comprado', 'recompra') DEFAULT 'orcamento_gerado'
+    status ENUM('orcamento_gerado', 'compra_confirmada', 'produto_comprado', 'recompra') DEFAULT 'orcamento_gerado',
+    user_id INT,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS protocol_items (
@@ -31,5 +33,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'staff') DEFAULT 'admin'
+    name VARCHAR(255),
+    cpf VARCHAR(20),
+    role ENUM('master', 'consultant') DEFAULT 'consultant'
 );
