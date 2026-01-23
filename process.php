@@ -1,19 +1,6 @@
 <?php
 session_start();
-
-// 1. Injeção da Base (Obrigatórios)
-$cart = [
-    'NXCAP' => [
-        'name' => 'NXCAP',
-        'usage' => 'Uso Diário',
-        'price' => 150.00 // Exemplo
-    ],
-    'Power Trimagnesio' => [
-        'name' => 'Power Trimagnesio',
-        'usage' => 'Uso Diário',
-        'price' => 120.00 // Exemplo
-    ]
-];
+require_once 'db.php';
 
 // Coleta de dados do formulário
 $name = $_POST['name'] ?? '';
@@ -27,61 +14,95 @@ $emotional = $_POST['emotional'] ?? 'stable';
 $gut = $_POST['gut'] ?? 'normal';
 $observations = $_POST['observations'] ?? '';
 
-// 2. Empilhamento dos Módulos (Lógica)
+// Inicializar carrinho e alertas
+$cart = [];
+$_SESSION['alerts'] = [];
 
-// Módulo Dor
-if ($pain === 'yes') {
-    $cart['Oleo SOFH'] = ['name' => 'Óleo SOFH', 'usage' => 'Ingestão', 'price' => 80.00];
-    $cart['Omega 3'] = ['name' => 'Ômega 3', 'usage' => 'Ingestão', 'price' => 90.00];
-    $cart['Gel Life Shii'] = ['name' => 'Gel Life Shii', 'usage' => 'Aplicação local', 'price' => 50.00];
-}
-
-// Módulo Pressão Alta
-if ($pressure === 'yes') {
-    $cart['Oleo SOFH'] = ['name' => 'Óleo SOFH', 'usage' => 'Ingestão', 'price' => 80.00];
-    $_SESSION['alerts'][] = "Cuidado com estimulantes";
-}
-
-// Módulo Diabetes
-if ($diabetes === 'yes') {
-    // Adicionar produtos específicos para diabetes se houver
-}
-
-// Módulo Sono
-if ($sleep === 'bad') {
-    // Adicionar produtos para sono
-}
-
-// Módulo Emocional
-if ($emotional === 'unstable') {
-    $cart['Melatonina+CoQ10'] = ['name' => 'Melatonina+CoQ10', 'usage' => 'Noite', 'price' => 110.00];
-    $cart['Polivitaminico'] = ['name' => 'Polivitamínico', 'usage' => 'Manhã', 'price' => 60.00];
-    $cart['Sache Energetico'] = ['name' => 'Sachê Energético', 'usage' => 'Manhã', 'price' => 40.00];
-}
-
-// Módulo Intestino
-if ($gut === 'constipated') {
-    // Produtos para intestino preso
-} elseif ($gut === 'loose') {
-    // Produtos para intestino solto
-}
-
-// 3. Cálculo Financeiro
-$total = 0;
-foreach ($cart as $item) {
-    $total += $item['price'];
-}
-
-// Salvar no Banco de Dados
-require_once 'db.php';
-
+// 1. BUSCAR PRODUTOS BASE (Obrigatórios)
 try {
-    $stmt = $pdo->prepare("INSERT INTO leads (session_id, name, email, cpf, pain, pressure, diabetes, sleep, emotional, gut, observations, total_price, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $pdo->query("
+        SELECT * FROM products 
+        WHERE is_base = 1 AND is_active = 1
+        ORDER BY name
+    ");
+    $baseProducts = $stmt->fetchAll();
+    
+    foreach ($baseProducts as $product) {
+        $cart[$product['name']] = [
+            'name' => $product['name'],
+            'usage' => $product['usage_instruction'],
+            'price' => $product['price']
+        ];
+    }
+
+    // 2. BUSCAR PRODUTOS CONDICIONAIS BASEADOS NAS RESPOSTAS
+    $conditions = [
+        'pain' => $pain,
+        'pressure' => $pressure,
+        'diabetes' => $diabetes,
+        'sleep' => $sleep,
+        'emotional' => $emotional,
+        'gut' => $gut
+    ];
+
+    // Para cada condição, buscar produtos que atendem a regra
+    foreach ($conditions as $conditionType => $conditionValue) {
+        $stmt = $pdo->prepare("
+            SELECT DISTINCT p.*, pr.priority
+            FROM products p
+            INNER JOIN product_rules pr ON p.id = pr.product_id
+            WHERE pr.condition_type = ? 
+            AND pr.condition_value = ? 
+            AND p.is_active = 1
+            ORDER BY pr.priority DESC
+        ");
+        $stmt->execute([$conditionType, $conditionValue]);
+        $conditionalProducts = $stmt->fetchAll();
+        
+        foreach ($conditionalProducts as $product) {
+            // Usar nome como chave para evitar duplicatas
+            if (!isset($cart[$product['name']])) {
+                $cart[$product['name']] = [
+                    'name' => $product['name'],
+                    'usage' => $product['usage_instruction'],
+                    'price' => $product['price']
+                ];
+            }
+            
+            // Buscar alertas associados a este produto
+            $stmtAlert = $pdo->prepare("
+                SELECT alert_message 
+                FROM product_alerts 
+                WHERE product_id = ?
+            ");
+            $stmtAlert->execute([$product['id']]);
+            $alerts = $stmtAlert->fetchAll();
+            
+            foreach ($alerts as $alert) {
+                if (!in_array($alert['alert_message'], $_SESSION['alerts'])) {
+                    $_SESSION['alerts'][] = $alert['alert_message'];
+                }
+            }
+        }
+    }
+
+    // 3. CÁLCULO FINANCEIRO
+    $total = 0;
+    foreach ($cart as $item) {
+        $total += $item['price'];
+    }
+
+    // 4. SALVAR NO BANCO DE DADOS
+    $stmt = $pdo->prepare("
+        INSERT INTO leads (
+            session_id, name, email, cpf, pain, pressure, diabetes, 
+            sleep, emotional, gut, observations, total_price
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+    
     $sessionId = session_id();
     if (empty($sessionId)) $sessionId = 'sess_' . uniqid();
     
-    $refUserId = $_SESSION['ref_user_id'] ?? null;
-
     $stmt->execute([
         $sessionId,
         $name,
@@ -94,36 +115,41 @@ try {
         $emotional,
         $gut,
         $observations,
-        $total,
-        $refUserId
+        $total
     ]);
     
     $leadId = $pdo->lastInsertId();
     
     // Salvar itens do protocolo
-    $stmtItem = $pdo->prepare("INSERT INTO protocol_items (lead_id, product_name, usage_instruction, price) VALUES (?, ?, ?, ?)");
+    $stmtItem = $pdo->prepare("
+        INSERT INTO protocol_items (lead_id, product_name, usage_instruction, price) 
+        VALUES (?, ?, ?, ?)
+    ");
+    
     foreach ($cart as $item) {
-        $stmtItem->execute([$leadId, $item['name'], $item['usage'], $item['price']]);
+        $stmtItem->execute([
+            $leadId, 
+            $item['name'], 
+            $item['usage'], 
+            $item['price']
+        ]);
     }
     
+    // Salvar na sessão para a tela de resultado
+    $_SESSION['protocol'] = $cart;
+    $_SESSION['total'] = $total;
+    $_SESSION['observations'] = $observations;
+    $_SESSION['lead_name'] = $name;
+    $_SESSION['lead_email'] = $email;
+    $_SESSION['lead_cpf'] = $cpf;
+
+    // Redirecionar para o resultado
+    header('Location: result.php');
+    exit;
+
 } catch (Exception $e) {
-    // Log error silently or handle it
-    // error_log($e->getMessage());
+    // Em caso de erro, log e redireciona para página de erro
+    error_log("Erro no process.php: " . $e->getMessage());
+    die("Erro ao processar protocolo. Por favor, tente novamente.");
 }
-
-// Salvar na sessão para a tela de resultado
-$_SESSION['protocol'] = $cart;
-$_SESSION['total'] = $total;
-$_SESSION['observations'] = $observations;
-$_SESSION['lead_name'] = $name;
-$_SESSION['lead_email'] = $email;
-$_SESSION['lead_cpf'] = $cpf;
-$_SESSION['alerts'] = $_SESSION['alerts'] ?? [];
-
-// Simular tempo de processamento (opcional)
-// sleep(2);
-
-// Redirecionar para o resultado
-header('Location: result.php');
-exit;
 ?>

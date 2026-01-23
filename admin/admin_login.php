@@ -12,9 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($user && password_verify($password, $user['password'])) {
         $_SESSION['admin_logged_in'] = true;
-        $_SESSION['admin_user_id'] = $user['id'];
         $_SESSION['admin_user'] = $user['username'];
-        $_SESSION['admin_role'] = $user['role'];
         header('Location: admin_dashboard.php');
         exit;
     } else {

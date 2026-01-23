@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['admin_logged_in']) || !isset($_SESSION['admin_user_id'])) {
+if (!isset($_SESSION['admin_logged_in'])) {
     header('Location: admin_login.php');
     exit;
 }
@@ -8,27 +8,14 @@ if (!isset($_SESSION['admin_logged_in']) || !isset($_SESSION['admin_user_id'])) 
 require_once '../db.php';
 
 // Buscar todos os leads com seus itens de protocolo
-$userId = $_SESSION['admin_user_id'];
-$userRole = $_SESSION['admin_role'] ?? 'consultant';
-
-$query = "
+$stmt = $pdo->query("
     SELECT l.*, 
            GROUP_CONCAT(pi.product_name || ' (' || pi.usage_instruction || ')' || ' - R$ ' || pi.price, '; ') as products
     FROM leads l
     LEFT JOIN protocol_items pi ON l.id = pi.lead_id
-";
-
-if ($userRole !== 'master') {
-    $query .= " WHERE l.user_id = :user_id ";
-}
-
-$query .= " GROUP BY l.id ORDER BY l.created_at DESC ";
-
-$stmt = $pdo->prepare($query);
-if ($userRole !== 'master') {
-    $stmt->bindValue(':user_id', $userId);
-}
-$stmt->execute();
+    GROUP BY l.id
+    ORDER BY l.created_at DESC
+");
 $leads = $stmt->fetchAll();
 
 // Organizar leads por status
@@ -89,6 +76,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
                 <h1 class="text-2xl font-bold text-white">Dashboard Administrativo</h1>
             </div>
             <div class="flex items-center gap-4">
+                <!-- Products Link -->
+                <a href="products.php" class="px-4 py-2 bg-surface/80 hover:bg-surface rounded-lg transition-all text-gray-300 hover:text-white flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                    Produtos
+                </a>
+                
                 <!-- View Toggle -->
                 <div class="flex items-center gap-2 bg-surface/80 rounded-xl p-1 border border-white/10" x-data="{ view: 'kanban' }">
                     <button 
@@ -111,15 +106,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
                     </button>
                 </div>
                 
-                <span class="text-sm text-gray-400">👤 <?php echo htmlspecialchars($_SESSION['admin_user'] ?? 'Admin'); ?> (<?php echo ucfirst($_SESSION['admin_role'] ?? 'Consultor'); ?>)</span>
-                
-                <div class="flex items-center gap-2">
-                    <?php if (($_SESSION['admin_role'] ?? '') === 'master'): ?>
-                        <a href="admin_users.php" class="px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors text-sm font-medium">Usuários</a>
-                    <?php endif; ?>
-                    <a href="admin_settings.php" class="px-4 py-2 bg-surface/80 text-gray-300 border border-white/10 rounded-lg hover:text-white transition-colors text-sm font-medium">Configurações</a>
-                    <a href="admin_logout.php" class="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm font-medium">Sair</a>
-                </div>
+                <span class="text-sm text-gray-400">👤 <?php echo htmlspecialchars($_SESSION['admin_user'] ?? 'Admin'); ?></span>
+                <a href="admin_logout.php" class="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">Sair</a>
             </div>
         </div>
     </header>

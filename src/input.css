@@ -69,3 +69,12 @@
     opacity: 0.8;
 }
 
+/* Twinkle Animation */
+@keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); background-color: #1F2833; }
+    50% { opacity: 0.8; transform: scale(1.2); background-color: #45A29E; }
+}
+
+.dot-twinkle {
+    animation: twinkle 3s infinite ease-in-out;
+}

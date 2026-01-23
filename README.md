@@ -40,8 +40,6 @@ Sistema completo de avaliação metabólica e geração de protocolos de supleme
 
 ### Deploy para Produção (MySQL - Hostinger):
 
-Para instruções detalhadas de como migrar do SQLite para MySQL no deploy, consulte o [Guia de Deploy](Software_guide/Deploy_Guide.md).
-
 1. **Configure o banco de dados:**
    - Edite `db.php` linha 3: `$db_type = 'mysql';`
    - Configure credenciais MySQL (linhas 6-9)
