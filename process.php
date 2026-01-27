@@ -31,7 +31,8 @@ try {
         $cart[$product['name']] = [
             'name' => $product['name'],
             'usage' => $product['usage_instruction'],
-            'price' => $product['price']
+            'price' => $product['price'],
+            'image' => $product['image_url']
         ];
     }
 
@@ -65,7 +66,8 @@ try {
                 $cart[$product['name']] = [
                     'name' => $product['name'],
                     'usage' => $product['usage_instruction'],
-                    'price' => $product['price']
+                    'price' => $product['price'],
+                    'image' => $product['image_url']
                 ];
             }
             
@@ -96,13 +98,15 @@ try {
     $stmt = $pdo->prepare("
         INSERT INTO leads (
             session_id, name, email, cpf, pain, pressure, diabetes, 
-            sleep, emotional, gut, observations, total_price
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            sleep, emotional, gut, observations, total_price, user_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     
     $sessionId = session_id();
     if (empty($sessionId)) $sessionId = 'sess_' . uniqid();
     
+    $refUserId = $_SESSION['ref_user_id'] ?? null;
+
     $stmt->execute([
         $sessionId,
         $name,
@@ -115,7 +119,8 @@ try {
         $emotional,
         $gut,
         $observations,
-        $total
+        $total,
+        $refUserId
     ]);
     
     $leadId = $pdo->lastInsertId();

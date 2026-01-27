@@ -2,11 +2,8 @@
 session_start();
 require_once '../db.php';
 
-// Verificar se é Master Admin
-if (!isset($_SESSION['admin_logged_in']) || ($_SESSION['admin_role'] ?? '') !== 'master') {
-    header('Location: admin_dashboard.php');
-    exit;
-}
+$page_title = 'Gerenciar Usuários - Provitta Life';
+include 'includes/header.php';
 
 $message = '';
 $error = '';
@@ -43,33 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $stmt = $pdo->query("SELECT * FROM users ORDER BY role DESC, name ASC");
 $users = $stmt->fetchAll();
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciar Usuários - Provitta Life</title>
-    <link href="../assets/css/style.css" rel="stylesheet">
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-</head>
-<body class="bg-background bg-brand-gradient text-text font-sans antialiased min-h-screen">
-    <div id="dot-grid" class="dot-grid"></div>
-    <script src="../assets/js/background.js"></script>
 
-    <header class="relative z-10 border-b border-white/10 bg-black/30 backdrop-blur-md">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <a href="admin_dashboard.php"><img src="../assets/src/provitta_logopng.png" alt="Provitta Life" class="h-8 w-auto"></a>
-                <h1 class="text-2xl font-bold text-white">Gerenciar Usuários</h1>
-            </div>
-            <a href="admin_dashboard.php" class="text-primary hover:text-secondary transition-colors flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Voltar ao Dashboard
-            </a>
-        </div>
-    </header>
-
-    <main class="relative z-10 container mx-auto px-6 py-8" x-data="{ showAddModal: false }">
+<main class="flex-1 p-4 md:p-6 lg:p-8" x-data="{ showAddModal: false }">
         
         <?php if ($message): ?>
             <div class="bg-green-500/10 border border-green-500/30 text-green-400 p-4 rounded-2xl mb-6 flex items-center gap-3">
@@ -167,6 +139,4 @@ $users = $stmt->fetchAll();
             </div>
         </div>
 
-    </main>
-</body>
-</html>
+    <?php include 'includes/footer.php'; ?>

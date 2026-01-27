@@ -1,4 +1,4 @@
-<div class="lead-card bg-surface/90 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all cursor-move"
+<div class="lead-card pv-card overflow-hidden transition-all cursor-move"
      data-lead-id="<?php echo $lead['id']; ?>"
      x-data="{ expanded: false }">
     
@@ -34,7 +34,7 @@
         <!-- Informações Pessoais -->
         <div>
             <h5 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Informações</h5>
-            <div class="space-y-1 text-sm">
+            <div class="space-y-1 text-sm break-all"> <!-- break-all para evitar overflow em strings longas como CPF ou Session ID -->
                 <p class="text-gray-300"><span class="text-gray-500">CPF:</span> <?php echo htmlspecialchars($lead['cpf'] ?? 'Não informado'); ?></p>
                 <p class="text-gray-300"><span class="text-gray-500">Sessão:</span> <?php echo substr($lead['session_id'], 0, 12); ?>...</p>
             </div>
@@ -141,7 +141,19 @@
 
         <!-- Ações: Mover para outro status -->
         <div>
-            <h5 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Mover para</h5>
+            <h5 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ações</h5>
+            
+            <!-- Download PDF Button -->
+            <a href="generate_lead_pdf.php?id=<?php echo $lead['id']; ?>" 
+               target="_blank"
+               class="inline-flex items-center gap-2 px-4 py-2 mb-3 text-xs font-medium bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-500/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Baixar PDF
+            </a>
+            
+            <h5 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-4">Mover para</h5>
             <div class="flex flex-wrap gap-2">
                 <?php 
                 $statuses = [

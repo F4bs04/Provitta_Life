@@ -123,8 +123,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="bg-background bg-brand-gradient text-text font-sans antialiased min-h-screen">
 
-    <div id="dot-grid" class="dot-grid"></div>
-    <script src="../assets/js/background.js"></script>
 
     <header class="relative z-10 border-b border-white/10 bg-black/30 backdrop-blur-md">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">

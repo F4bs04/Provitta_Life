@@ -1,3 +1,29 @@
+<?php
+session_start();
+
+// Destruir sessão ao voltar para o início
+if (isset($_SESSION['user_authenticated'])) {
+    require_once 'db.php';
+    $session_id = session_id();
+    $ip_address = $_SERVER['REMOTE_ADDR'];
+    
+    // Remover sessão do banco
+    if (isset($_SESSION['user_id'])) {
+        $stmt = $pdo->prepare("DELETE FROM user_sessions WHERE user_id = ? AND ip_address = ?");
+        $stmt->execute([$_SESSION['user_id'], $ip_address]);
+    } else {
+        $stmt = $pdo->prepare("DELETE FROM user_sessions WHERE session_id = ? AND ip_address = ?");
+        $stmt->execute([$session_id, $ip_address]);
+    }
+    
+    session_destroy();
+    session_start(); // Reiniciar sessão limpa
+}
+
+if (isset($_GET['ref'])) {
+    $_SESSION['ref_user_id'] = $_GET['ref'];
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -9,12 +35,10 @@
     <title>Provitta Life - Protocolo Personalizado</title>
     <link rel="icon" href="./assets/src/favicon.icon" type="image/x-icon">
     <link href="./assets/css/style.css" rel="stylesheet">
+
 </head>
 <body class="bg-background bg-brand-gradient text-text font-sans antialiased overflow-x-hidden min-h-screen bg-fixed">
 
-    <!-- Dot Grid Background -->
-    <div id="dot-grid" class="dot-grid"></div>
-    <script src="assets/js/background.js"></script>
 
     <!-- Hero Section -->
     <div class="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
@@ -37,7 +61,7 @@
             </p>
             
             <div class="pt-8">
-                <a href="form.php" onclick="document.getElementById('loader-overlay').classList.remove('hidden')" class="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-background transition-all duration-200 bg-primary font-lg rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary hover:bg-secondary hover:text-white hover:shadow-[0_0_30px_rgba(102,252,241,0.5)]">
+                <a href="user_login.php" onclick="document.getElementById('loader-overlay').classList.remove('hidden')" class="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-background transition-all duration-200 bg-primary font-lg rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary hover:bg-secondary hover:text-white hover:shadow-[0_0_30px_rgba(102,252,241,0.5)]">
                     <span class="mr-2">INICIAR AVALIAÇÃO</span>
                     <svg class="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                 </a>

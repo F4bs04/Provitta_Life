@@ -43,7 +43,9 @@ try {
             gut TEXT DEFAULT 'normal',
             observations TEXT,
             total_price DECIMAL(10, 2) DEFAULT 0.00,
-            status TEXT DEFAULT 'orcamento_gerado'
+            status TEXT DEFAULT 'orcamento_gerado',
+            user_id INTEGER,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )");
 
         $pdo->exec("CREATE TABLE IF NOT EXISTS protocol_items (
@@ -59,7 +61,9 @@ try {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            role TEXT DEFAULT 'admin',
+            name TEXT,
+            cpf TEXT,
+            role TEXT DEFAULT 'consultant',
             permissions TEXT DEFAULT 'view_leads,manage_leads,manage_products'
         )");
 
@@ -108,11 +112,83 @@ try {
             FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
         )");
 
-        // Criar usuário admin padrão se não existir
+        // Criar tabela de códigos de convite
+        $pdo->exec("CREATE TABLE IF NOT EXISTS invite_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT UNIQUE NOT NULL,
+            created_by INTEGER NOT NULL,
+            used_by INTEGER, -- Mantido para compatibilidade, mas agora usamos usage_count
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            used_at DATETIME,
+            is_active INTEGER DEFAULT 1,
+            expires_at DATETIME,
+            max_uses INTEGER DEFAULT 1,
+            usage_count INTEGER DEFAULT 0,
+            is_exceptional INTEGER DEFAULT 0,
+            FOREIGN KEY (created_by) REFERENCES users(id),
+            FOREIGN KEY (used_by) REFERENCES users(id)
+        )");
+
+        // Adicionar colunas novas se não existirem
+        try {
+            $pdo->exec("ALTER TABLE invite_codes ADD COLUMN max_uses INTEGER DEFAULT 1");
+        } catch (Exception $e) {}
+        
+        try {
+            $pdo->exec("ALTER TABLE invite_codes ADD COLUMN usage_count INTEGER DEFAULT 0");
+        } catch (Exception $e) {}
+
+        try {
+            $pdo->exec("ALTER TABLE invite_codes ADD COLUMN is_exceptional INTEGER DEFAULT 0");
+        } catch (Exception $e) {}
+
+        // Criar tabela de sessões de usuário
+        $pdo->exec("CREATE TABLE IF NOT EXISTS user_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            session_id TEXT NOT NULL,
+            ip_address TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
+            invite_code TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )");
+
+        // Adicionar coluna is_invite_user na tabela users se não existir
+        try {
+            $pdo->exec("ALTER TABLE users ADD COLUMN is_invite_user INTEGER DEFAULT 0");
+        } catch (Exception $e) {
+            // Coluna já existe, ignorar erro
+        }
+
+        try {
+            $pdo->exec("ALTER TABLE users ADD COLUMN permissions TEXT DEFAULT 'view_leads,manage_leads,manage_products'");
+        } catch (Exception $e) {
+            // Coluna já existe, ignorar erro
+        }
+
+        // Criar usuários master padrão se não existirem
         $stmt = $pdo->query("SELECT COUNT(*) FROM users");
         if ($stmt->fetchColumn() == 0) {
-            $password = password_hash('admin123', PASSWORD_DEFAULT);
-            $pdo->exec("INSERT INTO users (username, password, role, permissions) VALUES ('admin', '$password', 'admin', 'view_leads,manage_leads,manage_products')");
+            $password = '@acessoPro#123';
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $role = 'master';
+            $permissions = 'view_leads,manage_leads,manage_products';
+            
+            $master_users = [
+                ['admin', 'Administrador Master'],
+                ['leandro', 'Leandro - Diretor CEO'],
+                ['valbrito', 'Val Brito - Diretor Comercial'],
+                ['lucio', 'Lúcio - Diretor Tecnológico'],
+                ['laudimar', 'Laudimar - Financeiro'],
+                ['sol', 'Sol - Financeiro - Nutricionista'],
+                ['mariahercilina', 'Maria Hercilina - Terapeuta']
+            ];
+            
+            foreach ($master_users as $u) {
+                $stmt = $pdo->prepare("INSERT INTO users (username, password, name, role, permissions) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$u[0], $hashed_password, $u[1], $role, $permissions]);
+            }
         }
     }
 } catch (\PDOException $e) {

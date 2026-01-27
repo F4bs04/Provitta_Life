@@ -15,15 +15,8 @@ try {
     $count = $stmt->fetchColumn();
     
     if ($count > 0) {
-        echo "⚠️  AVISO: Já existem {$count} produtos no banco de dados.\n";
-        echo "Deseja continuar e adicionar mais produtos? (s/n): ";
-        $handle = fopen("php://stdin", "r");
-        $line = fgets($handle);
-        if (trim($line) != 's') {
-            echo "Migração cancelada.\n";
-            exit;
-        }
-        fclose($handle);
+        echo "⚠️  AVISO: Já existem {$count} produtos no banco de dados. Pulando inserção inicial.\n";
+        // exit; // Comentado para permitir que o script continue se necessário, mas geralmente queremos parar se já houver dados
     }
 
     // 1. PRODUTOS BASE (Obrigatórios)

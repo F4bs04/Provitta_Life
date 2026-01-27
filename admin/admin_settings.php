@@ -2,10 +2,8 @@
 session_start();
 require_once '../db.php';
 
-if (!isset($_SESSION['admin_logged_in'])) {
-    header('Location: admin_login.php');
-    exit;
-}
+$page_title = 'Minha Conta - Provitta Life';
+include 'includes/header.php';
 
 $userId = $_SESSION['admin_user_id'];
 $message = '';
@@ -42,32 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha Conta - Provitta Life</title>
-    <link href="../assets/css/style.css" rel="stylesheet">
-</head>
-<body class="bg-background bg-brand-gradient text-text font-sans antialiased min-h-screen">
-    <div id="dot-grid" class="dot-grid"></div>
-    <script src="../assets/js/background.js"></script>
 
-    <header class="relative z-10 border-b border-white/10 bg-black/30 backdrop-blur-md">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <a href="admin_dashboard.php"><img src="../assets/src/provitta_logopng.png" alt="Provitta Life" class="h-8 w-auto"></a>
-                <h1 class="text-2xl font-bold text-white">Minha Conta</h1>
-            </div>
-            <a href="admin_dashboard.php" class="text-primary hover:text-secondary transition-colors flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Voltar ao Dashboard
-            </a>
-        </div>
-    </header>
-
-    <main class="relative z-10 container mx-auto px-6 py-8 max-w-2xl">
+<main class="flex-1 p-4 md:p-6 lg:p-8 max-w-2xl mx-auto">
         
         <!-- Aviso Importante -->
         <div class="bg-yellow-400/10 border border-yellow-400/30 rounded-3xl p-6 mb-8 flex gap-4 items-start">
@@ -132,6 +106,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
         </div>
 
-    </main>
-</body>
-</html>
+    <?php include 'includes/footer.php'; ?>

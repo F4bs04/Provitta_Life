@@ -12,7 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($user && password_verify($password, $user['password'])) {
         $_SESSION['admin_logged_in'] = true;
+        $_SESSION['admin_user_id'] = $user['id'];
         $_SESSION['admin_user'] = $user['username'];
+        $_SESSION['admin_role'] = $user['role'];
         header('Location: admin_dashboard.php');
         exit;
     } else {
@@ -31,9 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="bg-background bg-brand-gradient text-text font-sans antialiased min-h-screen flex items-center justify-center p-4">
     
-    <!-- Dot Grid Background -->
-    <div id="dot-grid" class="dot-grid"></div>
-    <script src="../assets/js/background.js"></script>
 
     <div class="relative z-10 w-full max-w-md bg-surface/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 shadow-2xl">
         <div class="text-center mb-8">
