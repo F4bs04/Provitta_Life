@@ -62,7 +62,7 @@ if (isset($_GET['ref'])) {
             
             <div class="pt-8">
                 <a href="user_login.php" onclick="document.getElementById('loader-overlay').classList.remove('hidden')" class="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-background transition-all duration-200 bg-primary font-lg rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary hover:bg-secondary hover:text-white hover:shadow-[0_0_30px_rgba(102,252,241,0.5)]">
-                    <span class="mr-2">INICIAR AVALIAÇÃO</span>
+                    <span class="mr-2">INICIAR PROTOCOLO</span>
                     <svg class="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                 </a>
             </div>
