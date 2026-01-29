@@ -33,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price = floatval($_POST['price'] ?? 0);
     $isBase = isset($_POST['is_base']) ? 1 : 0;
     $isActive = isset($_POST['is_active']) ? 1 : 0;
+    $category = trim($_POST['category'] ?? 'Outros');
     $imageUrl = $product['image_url'];
 
     if (empty($name)) {
@@ -80,8 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if (!$error) {
                 // Atualizar produto
-                $stmt = $pdo->prepare("UPDATE products SET name = ?, description = ?, usage_instruction = ?, price = ?, is_base = ?, is_active = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-                $stmt->execute([$name, $description, $usage, $price, $isBase, $isActive, $imageUrl, $productId]);
+                $stmt = $pdo->prepare("UPDATE products SET name = ?, description = ?, usage_instruction = ?, price = ?, is_base = ?, is_active = ?, category = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                $stmt->execute([$name, $description, $usage, $price, $isBase, $isActive, $category, $imageUrl, $productId]);
             
                 // Deletar regras antigas
                 $pdo->prepare("DELETE FROM product_rules WHERE product_id = ?")->execute([$productId]);
@@ -165,8 +166,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             class="w-full px-4 py-3 bg-background/50 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-all resize-none"><?php echo htmlspecialchars($product['description'] ?? ''); ?></textarea>
                     </div>
 
-                    <div class="md:col-span-2">
-                        <label class="block text-gray-300 mb-2 font-medium">Instrução de Uso</label>
                         <select name="usage_instruction" required
                             class="w-full px-4 py-3 bg-background/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary transition-all">
                             <option value="">Selecione uma instrução...</option>
@@ -182,6 +181,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="2x ao dia" <?php echo $product['usage_instruction'] == '2x ao dia' ? 'selected' : ''; ?>>2x ao dia</option>
                             <option value="3x ao dia" <?php echo $product['usage_instruction'] == '3x ao dia' ? 'selected' : ''; ?>>3x ao dia</option>
                             <option value="Conforme necessário" <?php echo $product['usage_instruction'] == 'Conforme necessário' ? 'selected' : ''; ?>>Conforme necessário</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-300 mb-2 font-medium">Categoria</label>
+                        <select name="category" required
+                            class="w-full px-4 py-3 bg-background/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary transition-all">
+                            <option value="Outros">Selecione uma categoria...</option>
+                            <option value="Perfumes" <?php echo ($product['category'] ?? '') == 'Perfumes' ? 'selected' : ''; ?>>Perfumes</option>
+                            <option value="Capilar" <?php echo ($product['category'] ?? '') == 'Capilar' ? 'selected' : ''; ?>>Capilar</option>
+                            <option value="Nutraceuticos" <?php echo ($product['category'] ?? '') == 'Nutraceuticos' ? 'selected' : ''; ?>>Nutraceuticos</option>
+                            <option value="Vitaminas" <?php echo ($product['category'] ?? '') == 'Vitaminas' ? 'selected' : ''; ?>>Vitaminas</option>
+                            <option value="Gerais" <?php echo ($product['category'] ?? '') == 'Gerais' ? 'selected' : ''; ?>>Gerais</option>
+                            <option value="Óleos" <?php echo ($product['category'] ?? '') == 'Óleos' ? 'selected' : ''; ?>>Óleos</option>
+                            <option value="Outros" <?php echo ($product['category'] ?? '') == 'Outros' ? 'selected' : ''; ?>>Outros</option>
                         </select>
                     </div>
 

@@ -12,19 +12,78 @@ if (!isset($_SESSION['admin_logged_in']) || !isset($_SESSION['admin_user_id'])) 
 $userId = $_SESSION['admin_user_id'];
 $userRole = $_SESSION['admin_role'] ?? 'consultant';
 
+
 // Filter Parameters
 $dateStart = $_GET['date_start'] ?? date('Y-m-01');
 $dateEnd = $_GET['date_end'] ?? date('Y-m-d');
 $statusFilter = $_GET['status'] ?? '';
+$showArchived = $_GET['show_archived'] ?? '0';
+$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$perPage = 20;
+$offset = ($page - 1) * $perPage;
 
-$query = "SELECT l.*, GROUP_CONCAT(pi.product_name || ' (' || pi.usage_instruction || ')' || ' - R$ ' || pi.price, '; ') as products FROM leads l LEFT JOIN protocol_items pi ON l.id = pi.lead_id";
+
+// Check if invite_code_id column exists (backward compatibility)
+try {
+    $columnCheck = $pdo->query("SHOW COLUMNS FROM leads LIKE 'invite_code_id'");
+    $hasInviteTracking = $columnCheck->rowCount() > 0;
+} catch (Exception $e) {
+    // If check fails, assume column doesn't exist
+    $hasInviteTracking = false;
+    error_log("Invite tracking check failed: " . $e->getMessage());
+}
+
+// Build query based on whether invite tracking is available
+if ($hasInviteTracking) {
+    $query = "SELECT l.*, 
+        GROUP_CONCAT(pi.product_name || ' (' || pi.usage_instruction || ')' || ' - R$ ' || pi.price, '; ') as products,
+        ic.code as invite_code,
+        ic.guest_name as invite_guest_name
+        FROM leads l 
+        LEFT JOIN protocol_items pi ON l.id = pi.lead_id
+        LEFT JOIN invite_codes ic ON l.invite_code_id = ic.id";
+} else {
+    $query = "SELECT l.*, 
+        GROUP_CONCAT(pi.product_name || ' (' || pi.usage_instruction || ')' || ' - R$ ' || pi.price, '; ') as products,
+        NULL as invite_code,
+        NULL as invite_guest_name
+        FROM leads l 
+        LEFT JOIN protocol_items pi ON l.id = pi.lead_id";
+}
 
 $whereClauses = [];
 $params = [];
 
-if ($userRole !== 'master') {
+// Role-based filtering
+if ($hasInviteTracking && $userRole === 'subscriber') {
+    // Subscribers see leads generated from their invite codes
+    $whereClauses[] = "(ic.created_by = :user_id OR l.user_id = :user_id)";
+    $params[':user_id'] = $userId;
+} elseif ($userRole === 'consultant') {
+    // Consultants see only their assigned leads
     $whereClauses[] = "l.user_id = :user_id";
     $params[':user_id'] = $userId;
+} elseif (!$hasInviteTracking && $userRole === 'subscriber') {
+    // Fallback for subscribers without invite tracking
+    $whereClauses[] = "l.user_id = :user_id";
+    $params[':user_id'] = $userId;
+}
+// Masters see all leads (no filter)
+
+// Archived filter (check if column exists)
+try {
+    $archivedCheck = $pdo->query("SHOW COLUMNS FROM leads LIKE 'archived'");
+    if ($archivedCheck->rowCount() > 0) {
+        if ($showArchived === '1') {
+            // Show only archived
+            $whereClauses[] = "l.archived = 1";
+        } else {
+            // Show only non-archived (default)
+            $whereClauses[] = "(l.archived IS NULL OR l.archived = 0)";
+        }
+    }
+} catch (Exception $e) {
+    // Column doesn't exist yet, ignore
 }
 
 if ($dateStart && $dateEnd) {
@@ -44,12 +103,18 @@ if (!empty($whereClauses)) {
 
 $query .= " GROUP BY l.id ORDER BY l.created_at DESC ";
 
-$stmt = $pdo->prepare($query);
-foreach ($params as $key => $value) {
-    $stmt->bindValue($key, $value);
+try {
+    $stmt = $pdo->prepare($query);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
+    $stmt->execute();
+    $leads = $stmt->fetchAll();
+} catch (Exception $e) {
+    error_log("Dashboard query error: " . $e->getMessage());
+    error_log("Query: " . $query);
+    die("Erro ao carregar leads. Por favor, contate o administrador. Detalhes: " . $e->getMessage());
 }
-$stmt->execute();
-$leads = $stmt->fetchAll();
 
 $kanban = ['orcamento_gerado' => [], 'compra_confirmada' => [], 'produto_comprado' => [], 'recompra' => []];
 foreach ($leads as $lead) {
@@ -63,6 +128,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     $stmt = $pdo->prepare("UPDATE leads SET status = ? WHERE id = ?");
     $stmt->execute([$newStatus, $leadId]);
     echo json_encode(['success' => true]);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['archive_lead'])) {
+    $leadId = $_POST['lead_id'];
+    $archived = $_POST['archived'] ?? 1;
+    
+    try {
+        $stmt = $pdo->prepare("UPDATE leads SET archived = ? WHERE id = ?");
+        $stmt->execute([$archived, $leadId]);
+        echo json_encode(['success' => true]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
     exit;
 }
 
@@ -443,6 +522,18 @@ include 'includes/header.php';
                             endforeach; 
                             ?>
                         </div>
+                        
+                        <!-- Archive Button -->
+                        <div class="mt-3 pt-3 border-t border-white/10">
+                            <button 
+                                @click="if(confirm('Tem certeza que deseja arquivar este lead?')) archiveLead(<?php echo $lead['id']; ?>)"
+                                class="w-full px-3 py-2 text-xs font-medium bg-gray-500/20 text-gray-400 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-colors border border-gray-500/20 hover:border-red-500/20 flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                                </svg>
+                                Arquivar Lead
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -457,11 +548,14 @@ include 'includes/header.php';
           init() {
             this.$nextTick(() => {
               const columns = document.querySelectorAll('.sortable-column');
+              const isMobile = window.innerWidth < 768;
+              
               columns.forEach(col => {
                 new Sortable(col, {
                   group: 'kanban',
                   animation: 150,
                   ghostClass: 'opacity-40',
+                  handle: isMobile ? '.drag-handle' : null, // Use handle only on mobile
                   onEnd: (evt) => {
                     const leadId = evt.item?.dataset?.leadId;
                     const newStatus = evt.to?.dataset?.status;
@@ -482,6 +576,25 @@ include 'includes/header.php';
               setTimeout(() => window.location.reload(), 200);
             } catch (e) {
               alert('Erro ao atualizar status.');
+              console.error(e);
+            }
+          },
+          async archiveLead(leadId) {
+            try {
+              const form = new FormData();
+              form.append('archive_lead', '1');
+              form.append('lead_id', leadId);
+              form.append('archived', '1');
+              const res = await fetch('admin_dashboard.php', { method: 'POST', body: form });
+              if (!res.ok) throw new Error('HTTP ' + res.status);
+              const data = await res.json();
+              if (data.success) {
+                setTimeout(() => window.location.reload(), 200);
+              } else {
+                alert('Erro ao arquivar lead: ' + (data.error || 'Desconhecido'));
+              }
+            } catch (e) {
+              alert('Erro ao arquivar lead.');
               console.error(e);
             }
           }

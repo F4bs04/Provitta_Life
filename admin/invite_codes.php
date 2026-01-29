@@ -7,28 +7,59 @@ include 'includes/header.php';
 
 $success = '';
 $error = '';
+$userRole = $_SESSION['admin_role'] ?? 'consultant';
+$userId = $_SESSION['admin_user_id'];
+
+// Se for assinante, verificar limite de convites
+if ($userRole === 'subscriber') {
+    $stmtLimit = $pdo->prepare("SELECT invite_limit, (SELECT COUNT(*) FROM invite_codes WHERE created_by = ?) as generated_count FROM users WHERE id = ?");
+    $stmtLimit->execute([$userId, $userId]);
+    $limitInfo = $stmtLimit->fetch();
+    $remainingInvites = max(0, $limitInfo['invite_limit'] - $limitInfo['generated_count']);
+}
 
 // Gerar novo código de convite
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_code'])) {
     $expires_days = intval($_POST['expires_days'] ?? 30);
     $max_uses = intval($_POST['max_uses'] ?? 1);
-    
-    // Validar max_uses entre 1 e 5
     $max_uses = max(1, min(5, $max_uses));
-    
+    $guest_name = trim($_POST['guest_name'] ?? '');
     $is_exceptional = isset($_POST['is_exceptional']) ? 1 : 0;
     
     $expires_at = $expires_days > 0 ? date('Y-m-d H:i:s', strtotime("+$expires_days days")) : null;
     
     // Gerar código único
-    $code = strtoupper(substr(bin2hex(random_bytes(6)), 0, 12));
-    $code = substr($code, 0, 4) . '-' . substr($code, 4, 4) . '-' . substr($code, 8, 4);
+    $random_part = strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+    if (!empty($guest_name)) {
+        // Limpar o nome para usar no código (apenas letras e números)
+        $clean_name = preg_replace('/[^A-Za-z0-9]/', '', $guest_name);
+        $prefix = strtoupper(substr($clean_name, 0, 8));
+        $code = $prefix . '-' . $random_part;
+    } else {
+        $code = strtoupper(substr(bin2hex(random_bytes(6)), 0, 12));
+        $code = substr($code, 0, 4) . '-' . substr($code, 4, 4) . '-' . substr($code, 8, 4);
+    }
     
     try {
-        $stmt = $pdo->prepare("INSERT INTO invite_codes (code, created_by, expires_at, max_uses, is_exceptional) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$code, $_SESSION['admin_user_id'], $expires_at, $max_uses, $is_exceptional]);
+        // Validação de limite para assinantes
+        if ($userRole === 'subscriber' && $remainingInvites <= 0) {
+            throw new Exception("Você atingiu o seu limite de convites ($limitInfo[invite_limit]). Entre em contato com o administrador.");
+        }
+
+        // Assinantes só podem gerar convites de 1 uso (conforme regra de negócio)
+        if ($userRole === 'subscriber') {
+            $max_uses = 1;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO invite_codes (code, created_by, expires_at, max_uses, is_exceptional, guest_name) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$code, $_SESSION['admin_user_id'], $expires_at, $max_uses, $is_exceptional, $guest_name]);
         $msg_exceptional = $is_exceptional ? " (Excepcional - Sem limites)" : " (Válido para $max_uses usos)";
         $success = "Código gerado com sucesso: <strong>$code</strong>" . $msg_exceptional;
+        
+        // Atualizar contagem restante se for assinante
+        if ($userRole === 'subscriber') {
+            $remainingInvites--;
+        }
     } catch (Exception $e) {
         $error = "Erro ao gerar código: " . $e->getMessage();
     }
@@ -42,14 +73,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['revoke_code'])) {
     $success = "Código revogado com sucesso!";
 }
 
-// Buscar todos os códigos
-$stmt = $pdo->query("
+// Buscar todos os códigos (Filtrar se não for master)
+$queryCodes = "
     SELECT ic.*, 
            u1.name as created_by_name
     FROM invite_codes ic
     LEFT JOIN users u1 ON ic.created_by = u1.id
-    ORDER BY ic.created_at DESC
-");
+";
+
+if ($userRole !== 'master') {
+    $queryCodes .= " WHERE ic.created_by = :user_id ";
+}
+
+$queryCodes .= " ORDER BY ic.created_at DESC ";
+
+$stmt = $pdo->prepare($queryCodes);
+if ($userRole !== 'master') {
+    $stmt->bindValue(':user_id', $userId);
+}
+$stmt->execute();
 $codes = $stmt->fetchAll();
 
 // Organizar códigos por status
@@ -90,12 +132,24 @@ $revoked_codes = array_filter($codes, function($c) { return !$c['is_active']; })
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
                 Gerar Novo Código de Convite
+                <?php if ($userRole === 'subscriber'): ?>
+                    <span class="text-xs font-normal text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-widest">
+                        Restantes: <?php echo $remainingInvites; ?> / <?php echo $limitInfo['invite_limit']; ?>
+                    </span>
+                <?php endif; ?>
             </h2>
             
             <form method="POST" class="flex flex-col md:flex-row gap-4 items-end">
                 <div class="flex-1">
+                    <label class="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Nome do Convidado</label>
+                    <input type="text" name="guest_name" placeholder="Ex: João Silva" 
+                           class="w-full bg-background/50 border border-white/10 rounded-xl p-3 text-white focus:ring-2 focus:ring-primary outline-none transition-all">
+                    <p class="text-xs text-gray-500 mt-1">Opcional: será usado no código</p>
+                </div>
+
+                <div class="w-32">
                     <label class="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Validade (dias)</label>
-                    <input type="number" name="expires_days" value="30" min="1" max="365" 
+                    <input type="number" name="expires_days" value="30" min="0" max="365" 
                            class="w-full bg-background/50 border border-white/10 rounded-xl p-3 text-white focus:ring-2 focus:ring-primary outline-none transition-all">
                     <p class="text-xs text-gray-500 mt-1">0 = sem expiração</p>
                 </div>
@@ -189,6 +243,9 @@ $revoked_codes = array_filter($codes, function($c) { return !$c['is_active']; })
                             <?php endif; ?>
                         </div>
                         <div class="text-xs text-gray-400 space-y-1">
+                            <?php if ($code['guest_name']): ?>
+                            <p>Convidado: <span class="text-white font-bold"><?php echo htmlspecialchars($code['guest_name']); ?></span></p>
+                            <?php endif; ?>
                             <p>Criado por: <span class="text-gray-300"><?php echo htmlspecialchars($code['created_by_name']); ?></span></p>
                             <p>Criado em: <?php echo date('d/m/Y H:i', strtotime($code['created_at'])); ?></p>
                             <?php if ($code['expires_at']): ?>
@@ -222,6 +279,9 @@ $revoked_codes = array_filter($codes, function($c) { return !$c['is_active']; })
                         <span class="px-2 py-1 bg-gray-400/20 text-gray-400 text-xs font-medium rounded-full">Usado</span>
                     </div>
                     <div class="text-xs text-gray-400 space-y-1">
+                        <?php if ($code['guest_name']): ?>
+                        <p>Convidado: <span class="text-white font-bold"><?php echo htmlspecialchars($code['guest_name']); ?></span></p>
+                        <?php endif; ?>
                         <p>Criado por: <span class="text-gray-300"><?php echo htmlspecialchars($code['created_by_name']); ?></span></p>
                         <p>Usado por: <span class="text-green-400"><?php echo htmlspecialchars($code['used_by_name'] ?? 'Usuário Convidado'); ?></span></p>
                         <p>Usado em: <?php echo date('d/m/Y H:i', strtotime($code['used_at'])); ?></p>

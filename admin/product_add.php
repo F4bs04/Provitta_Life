@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price = floatval($_POST['price'] ?? 0);
     $isBase = isset($_POST['is_base']) ? 1 : 0;
     $isActive = isset($_POST['is_active']) ? 1 : 0;
+    $category = trim($_POST['category'] ?? 'Outros');
     $imageUrl = null;
 
     if (empty($name)) {
@@ -44,8 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             if (!$error) {
-                $stmt = $pdo->prepare("INSERT INTO products (name, description, usage_instruction, price, is_base, is_active, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$name, $description, $usage, $price, $isBase, $isActive, $imageUrl]);
+                $stmt = $pdo->prepare("INSERT INTO products (name, description, usage_instruction, price, is_base, is_active, category, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $description, $usage, $price, $isBase, $isActive, $category, $imageUrl]);
                 
                 $productId = $pdo->lastInsertId();
             
@@ -138,8 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             class="w-full px-4 py-3 bg-background/50 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-all resize-none"></textarea>
                     </div>
 
-                    <div class="md:col-span-2">
-                        <label class="block text-gray-300 mb-2 font-medium">Instrução de Uso</label>
                         <select name="usage_instruction" required
                             class="w-full px-4 py-3 bg-background/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary transition-all">
                             <option value="">Selecione uma instrução...</option>
@@ -155,6 +154,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="2x ao dia">2x ao dia</option>
                             <option value="3x ao dia">3x ao dia</option>
                             <option value="Conforme necessário">Conforme necessário</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-300 mb-2 font-medium">Categoria</label>
+                        <select name="category" required
+                            class="w-full px-4 py-3 bg-background/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-primary transition-all">
+                            <option value="Outros">Selecione uma categoria...</option>
+                            <option value="Perfumes">Perfumes</option>
+                            <option value="Capilar">Capilar</option>
+                            <option value="Nutraceuticos">Nutraceuticos</option>
+                            <option value="Vitaminas">Vitaminas</option>
+                            <option value="Gerais">Gerais</option>
+                            <option value="Óleos">Óleos</option>
+                            <option value="Outros">Outros</option>
                         </select>
                     </div>
 

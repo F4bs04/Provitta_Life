@@ -16,10 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = $_POST['name'];
         $cpf = $_POST['cpf'];
         $role = $_POST['role'];
+        $classification = $_POST['classification'] ?? 'Não Pagante';
+        $invite_limit = intval($_POST['invite_limit'] ?? 0);
 
         try {
-            $stmt = $pdo->prepare("INSERT INTO users (username, password, name, cpf, role) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$username, $password, $name, $cpf, $role]);
+            $stmt = $pdo->prepare("INSERT INTO users (username, password, name, cpf, role, classification, invite_limit) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$username, $password, $name, $cpf, $role, $classification, $invite_limit]);
             $message = "Usuário adicionado com sucesso!";
         } catch (Exception $e) {
             $error = "Erro ao adicionar usuário: " . $e->getMessage();
@@ -30,18 +32,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = $_POST['name'];
         $cpf = $_POST['cpf'];
         $role = $_POST['role'];
+        $classification = $_POST['classification'] ?? 'Não Pagante';
+        $invite_limit = intval($_POST['invite_limit'] ?? 0);
         $new_password = $_POST['password'] ?? '';
 
         try {
             // Se uma nova senha foi fornecida, atualiza com senha
             if (!empty($new_password)) {
                 $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("UPDATE users SET username = ?, password = ?, name = ?, cpf = ?, role = ? WHERE id = ?");
-                $stmt->execute([$username, $password_hash, $name, $cpf, $role, $id]);
+                $stmt = $pdo->prepare("UPDATE users SET username = ?, password = ?, name = ?, cpf = ?, role = ?, classification = ?, invite_limit = ? WHERE id = ?");
+                $stmt->execute([$username, $password_hash, $name, $cpf, $role, $classification, $invite_limit, $id]);
             } else {
                 // Caso contrário, atualiza sem alterar a senha
-                $stmt = $pdo->prepare("UPDATE users SET username = ?, name = ?, cpf = ?, role = ? WHERE id = ?");
-                $stmt->execute([$username, $name, $cpf, $role, $id]);
+                $stmt = $pdo->prepare("UPDATE users SET username = ?, name = ?, cpf = ?, role = ?, classification = ?, invite_limit = ? WHERE id = ?");
+                $stmt->execute([$username, $name, $cpf, $role, $classification, $invite_limit, $id]);
             }
             $message = "Usuário atualizado com sucesso!";
         } catch (Exception $e) {
@@ -64,7 +68,7 @@ $stmt = $pdo->query("SELECT * FROM users ORDER BY role DESC, name ASC");
 $users = $stmt->fetchAll();
 ?>
 
-<main class="flex-1 p-4 md:p-6 lg:p-8" x-data="{ showAddModal: false, showEditModal: false, editUser: {} }">
+<main class="flex-1 p-4 md:p-6 lg:p-8" x-data="{ showAddModal: false, showEditModal: false, editUser: {}, role: 'consultant' }">
         
         <?php if ($message): ?>
             <div class="bg-green-500/10 border border-green-500/30 text-green-400 p-4 rounded-2xl mb-6 flex items-center gap-3">
@@ -88,12 +92,14 @@ $users = $stmt->fetchAll();
         </div>
 
         <div class="bg-surface/80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-            <table class="w-full">
+            <div class="overflow-x-auto">
+                <table class="w-full">
                 <thead class="bg-black/30 border-b border-white/10">
                     <tr>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Nome / Usuário</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">CPF</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Papel</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Classificação</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Ações</th>
                     </tr>
                 </thead>
@@ -106,8 +112,35 @@ $users = $stmt->fetchAll();
                         </td>
                         <td class="px-6 py-4 text-gray-300"><?php echo htmlspecialchars($user['cpf'] ?? 'N/A'); ?></td>
                         <td class="px-6 py-4">
-                            <span class="px-3 py-1 rounded-full text-xs font-medium <?php echo $user['role'] === 'master' ? 'bg-primary/20 text-primary' : 'bg-secondary/20 text-secondary'; ?>">
-                                <?php echo ucfirst($user['role']); ?>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium <?php 
+                                echo match($user['role']) {
+                                    'master' => 'bg-primary/20 text-primary',
+                                    'subscriber' => 'bg-purple-500/20 text-purple-400',
+                                    default => 'bg-secondary/20 text-secondary'
+                                };
+                            ?>">
+                                <?php 
+                                echo match($user['role']) {
+                                    'master' => 'Master',
+                                    'subscriber' => 'Assinante/Empresa',
+                                    default => 'Consultor'
+                                };
+                                ?>
+                                <?php if ($user['role'] === 'subscriber'): ?>
+                                    <span class="ml-1 opacity-70">(Limite: <?php echo $user['invite_limit']; ?>)</span>
+                                <?php endif; ?>
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium <?php 
+                                echo match($user['classification'] ?? 'Não Pagante') {
+                                    'Assinante anual' => 'bg-green-500/20 text-green-400',
+                                    'Assinante mensal' => 'bg-blue-500/20 text-blue-400',
+                                    'Vitalicio' => 'bg-purple-500/20 text-purple-400',
+                                    default => 'bg-gray-500/20 text-gray-400'
+                                };
+                            ?>">
+                                <?php echo htmlspecialchars($user['classification'] ?? 'Não Pagante'); ?>
                             </span>
                         </td>
                         <td class="px-6 py-4">
@@ -135,6 +168,7 @@ $users = $stmt->fetchAll();
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         </div>
 
         <!-- Modal Adicionar Usuário -->
@@ -160,9 +194,24 @@ $users = $stmt->fetchAll();
                     </div>
                     <div>
                         <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Papel</label>
-                        <select name="role" class="w-full bg-background/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:ring-2 focus:ring-primary">
+                        <select name="role" x-model="role" class="w-full bg-background/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:ring-2 focus:ring-primary">
                             <option value="consultant">Consultor (Acesso aos seus leads)</option>
+                            <option value="subscriber">Assinante/Empresa (Acesso aos seus leads e convites)</option>
                             <option value="master">Master (Acesso total)</option>
+                        </select>
+                    </div>
+                    <div x-show="role === 'subscriber'">
+                        <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Limite de Convites</label>
+                        <input type="number" name="invite_limit" value="0" min="0" class="w-full bg-background/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:ring-2 focus:ring-primary">
+                        <p class="text-[10px] text-gray-500 mt-1">Quantidade de convites que este usuário pode gerar.</p>
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Classificação</label>
+                        <select name="classification" class="w-full bg-background/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:ring-2 focus:ring-primary">
+                            <option value="Não Pagante">Não Pagante</option>
+                            <option value="Assinante mensal">Assinante mensal</option>
+                            <option value="Assinante anual">Assinante anual</option>
+                            <option value="Vitalicio">Vitalicio</option>
                         </select>
                     </div>
                     <div class="flex gap-4 mt-8">
@@ -205,7 +254,22 @@ $users = $stmt->fetchAll();
                         <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Papel</label>
                         <select name="role" x-model="editUser.role" class="w-full bg-background/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:ring-2 focus:ring-primary">
                             <option value="consultant">Consultor (Acesso aos seus leads)</option>
+                            <option value="subscriber">Assinante/Empresa (Acesso aos seus leads e convites)</option>
                             <option value="master">Master (Acesso total)</option>
+                        </select>
+                    </div>
+                    <div x-show="editUser.role === 'subscriber'">
+                        <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Limite de Convites</label>
+                        <input type="number" name="invite_limit" x-model="editUser.invite_limit" min="0" class="w-full bg-background/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:ring-2 focus:ring-primary">
+                        <p class="text-[10px] text-gray-500 mt-1">Quantidade de convites que este usuário pode gerar.</p>
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Classificação</label>
+                        <select name="classification" x-model="editUser.classification" class="w-full bg-background/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:ring-2 focus:ring-primary">
+                            <option value="Não Pagante">Não Pagante</option>
+                            <option value="Assinante mensal">Assinante mensal</option>
+                            <option value="Assinante anual">Assinante anual</option>
+                            <option value="Vitalicio">Vitalicio</option>
                         </select>
                     </div>
                     

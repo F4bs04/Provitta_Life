@@ -94,10 +94,19 @@ include 'includes/header.php';
                     onkeyup="filterProducts()">
                 <select id="filterStatus" onchange="filterProducts()" 
                     class="pv-input px-4 py-2">
-                    <option value="all">Todos</option>
+                    <option value="all">Todos Status</option>
                     <option value="active">Ativos</option>
                     <option value="inactive">Inativos</option>
                     <option value="base">Base</option>
+                </select>
+                <select id="filterCategory" onchange="filterProducts()" 
+                    class="pv-input px-4 py-2">
+                    <option value="all">Todas Categorias</option>
+                    <option value="Perfumes">Perfumes</option>
+                    <option value="Capilar">Capilar</option>
+                    <option value="Nutraceuticos">Nutraceuticos</option>
+                    <option value="Vitaminas">Vitaminas</option>
+                    <option value="Outros">Outros</option>
                 </select>
             </div>
             <a href="product_add.php" class="pv-btn pv-btn-primary shadow-lg shadow-primary/20 flex items-center gap-2">
@@ -115,6 +124,7 @@ include 'includes/header.php';
                     <tr>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Imagem</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Produto</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Categoria</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Instrução</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Preço</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Tipo</th>
@@ -128,7 +138,8 @@ include 'includes/header.php';
                     <tr class="product-row hover:bg-white/5 transition-colors" 
                         data-name="<?php echo strtolower($product['name']); ?>"
                         data-status="<?php echo $product['is_active'] ? 'active' : 'inactive'; ?>"
-                        data-base="<?php echo $product['is_base'] ? 'base' : 'conditional'; ?>">
+                        data-base="<?php echo $product['is_base'] ? 'base' : 'conditional'; ?>"
+                        data-category="<?php echo htmlspecialchars($product['category'] ?? 'Outros'); ?>">
                         <td class="px-6 py-4">
                             <div class="relative group">
                                 <?php if ($product['image_url']): ?>
@@ -159,6 +170,11 @@ include 'includes/header.php';
                                 <?php endif; ?>
                                 <span class="font-semibold text-white"><?php echo htmlspecialchars($product['name']); ?></span>
                             </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 bg-white/5 border border-white/10 text-gray-300 rounded-full text-xs font-semibold">
+                                <?php echo htmlspecialchars($product['category'] ?? 'N/A'); ?>
+                            </span>
                         </td>
                         <td class="px-6 py-4 text-gray-400 text-sm"><?php echo htmlspecialchars($product['usage_instruction']); ?></td>
                         <td class="px-6 py-4 text-primary font-mono font-semibold">R$ <?php echo number_format($product['price'], 2, ',', '.'); ?></td>
@@ -319,21 +335,26 @@ include 'includes/header.php';
         function filterProducts() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const filterStatus = document.getElementById('filterStatus').value;
+            const filterCategory = document.getElementById('filterCategory').value;
             const rows = document.querySelectorAll('.product-row');
 
             rows.forEach(row => {
                 const name = row.dataset.name;
                 const status = row.dataset.status;
                 const base = row.dataset.base;
+                const category = row.dataset.category;
 
                 let matchSearch = name.includes(searchTerm);
-                let matchFilter = true;
+                let matchStatus = true;
+                let matchCategory = true;
 
-                if (filterStatus === 'active') matchFilter = status === 'active';
-                else if (filterStatus === 'inactive') matchFilter = status === 'inactive';
-                else if (filterStatus === 'base') matchFilter = base === 'base';
+                if (filterStatus === 'active') matchStatus = status === 'active';
+                else if (filterStatus === 'inactive') matchStatus = status === 'inactive';
+                else if (filterStatus === 'base') matchStatus = base === 'base';
 
-                row.style.display = (matchSearch && matchFilter) ? '' : 'none';
+                if (filterCategory !== 'all') matchCategory = category === filterCategory;
+
+                row.style.display = (matchSearch && matchStatus && matchCategory) ? '' : 'none';
             });
         }
 
