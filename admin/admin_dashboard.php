@@ -103,11 +103,36 @@ if (!empty($whereClauses)) {
 
 $query .= " GROUP BY l.id ORDER BY l.created_at DESC ";
 
+// Count total for pagination
+$countQuery = "SELECT COUNT(DISTINCT l.id) as total FROM leads l " . 
+    ($hasInviteTracking ? "LEFT JOIN invite_codes ic ON l.invite_code_id = ic.id" : "");
+if (!empty($whereClauses)) {
+    $countQuery .= " WHERE " . implode(' AND ', $whereClauses);
+}
+
+try {
+    $countStmt = $pdo->prepare($countQuery);
+    foreach ($params as $key => $value) {
+        $countStmt->bindValue($key, $value);
+    }
+    $countStmt->execute();
+    $totalLeads = $countStmt->fetch()['total'];
+    $totalPages = ceil($totalLeads / $perPage);
+} catch (Exception $e) {
+    $totalLeads = 0;
+    $totalPages = 1;
+}
+
+// Add pagination
+$query .= " LIMIT :limit OFFSET :offset";
+
 try {
     $stmt = $pdo->prepare($query);
     foreach ($params as $key => $value) {
         $stmt->bindValue($key, $value);
     }
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
     $leads = $stmt->fetchAll();
 } catch (Exception $e) {
@@ -175,6 +200,17 @@ include 'includes/header.php';
                     Lista
                 </button>
             </div>
+        </div>
+
+        <!-- Archived Filter Toggle -->
+        <div class="mb-4">
+            <a href="?<?php echo http_build_query(array_merge($_GET, ['show_archived' => $showArchived === '1' ? '0' : '1', 'page' => 1])); ?>" 
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-medium text-sm border <?php echo $showArchived === '1' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/20' : 'bg-surface/80 text-gray-400 border-white/10 hover:text-white hover:border-white/20'; ?>">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                </svg>
+                <?php echo $showArchived === '1' ? 'Ver Ativos (' . $totalLeads . ')' : 'Ver Arquivados'; ?>
+            </a>
         </div>
 
         <!-- Filtros de Tempo -->
@@ -539,6 +575,37 @@ include 'includes/header.php';
             </div>
             <?php endforeach; ?>
         </div>
+
+        <!-- Pagination -->
+        <?php if ($totalPages > 1): ?>
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-surface/50 p-4 rounded-xl border border-white/5">
+            <div class="text-sm text-gray-400">
+                Mostrando <?php echo count($leads); ?> de <?php echo $totalLeads; ?> leads
+            </div>
+            <div class="flex items-center gap-2 flex-wrap justify-center">
+                <?php if ($page > 1): ?>
+                <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page - 1])); ?>" 
+                   class="px-3 py-2 bg-surface/80 text-gray-400 rounded-lg hover:text-white hover:bg-white/10 transition-colors border border-white/10">
+                    ← Anterior
+                </a>
+                <?php endif; ?>
+                
+                <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
+                <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $i])); ?>" 
+                   class="px-3 py-2 rounded-lg transition-colors border <?php echo $i === $page ? 'bg-primary text-background border-primary' : 'bg-surface/80 text-gray-400 border-white/10 hover:text-white hover:bg-white/10'; ?>">
+                    <?php echo $i; ?>
+                </a>
+                <?php endfor; ?>
+                
+                <?php if ($page < $totalPages): ?>
+                <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page + 1])); ?>" 
+                   class="px-3 py-2 bg-surface/80 text-gray-400 rounded-lg hover:text-white hover:bg-white/10 transition-colors border border-white/10">
+                    Próxima →
+                </a>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
 
     <script>
       function dashboardApp() {
